@@ -4,6 +4,7 @@
 #include <list>
 #include <cstdint>
 #include <array>
+#include <type_traits>
 
 #include "iterator/input_iterator.hpp"
 #include "type_traits/type_traits.hpp"
@@ -28,9 +29,6 @@ static_assert(!is_null_pointer_v<int*>);
 
 class A {};
 
-enum E {};
-static_assert(std::is_enum_v<E> == true);
- 
 enum class Ec : int {};
 static_assert(std::is_enum_v<Ec> == true);
  
@@ -62,6 +60,10 @@ static_assert(
         && ! is_pointer_v<std::nullptr_t>
         &&   is_pointer_v<void (*)()>
     );
+
+enum class E {};
+ 
+union U { class UC {}; };
 
 int main() {
     std::vector<int> numbers = {1, 2, 3, 4, 5};
@@ -112,5 +114,12 @@ int main() {
     std::cout << "#3 " << is_function_v<decltype(f)> << '\n';
     std::cout << "#4 " << is_function_v<int> << '\n';
  
+    class C {};
+    std::cout << "Is member object pointer?\n" << std::boolalpha
+              << is_member_object_pointer_v<int(C::*)>
+              << ": int(C::*)\n"
+              << is_member_object_pointer_v<int(C::*)()>
+              << ": int(C::*)()\n";
+
     return 0;
 }
