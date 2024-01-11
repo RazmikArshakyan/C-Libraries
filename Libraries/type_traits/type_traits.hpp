@@ -101,15 +101,24 @@ struct is_null_pointer : is_same<std::nullptr_t, remove_cv_t<T>> {};
 template <typename T> 
 inline constexpr bool is_null_pointer_v = is_null_pointer<T>::value;
 
-template <typename T>  
-concept integral_requirement = requires (T type, T* pointer, void (*foo)(T)) {
-    { reinterpret_cast<T>(type) }->std::same_as<T>; 
-    { foo(0) }->std::same_as<void>; 
-    { pointer + type }->std::same_as<T*>;
-};
-
-template <typename T> 
-struct is_integral : bool_constant<integral_requirement<T>> {};
+template <typename T>
+struct is_integral : bool_constant<
+    is_same_v<T, bool> ||
+    is_same_v<T, char> ||
+    is_same_v<T, signed char> ||
+    is_same_v<T, unsigned char> ||
+    is_same_v<T, wchar_t> ||
+    is_same_v<T, char16_t> ||
+    is_same_v<T, char32_t> ||
+    is_same_v<T, short> ||
+    is_same_v<T, unsigned short> ||
+    is_same_v<T, int> ||
+    is_same_v<T, unsigned int> ||
+    is_same_v<T, long> ||
+    is_same_v<T, unsigned long> ||
+    is_same_v<T, long long> ||
+    is_same_v<T, unsigned long long>
+> {};
 
 template <typename T> 
 inline constexpr bool is_integral_v = is_integral<T>::value;
@@ -260,17 +269,32 @@ template <typename T>
 inline constexpr bool is_reference_v = is_reference<T>::value;
 
 template <typename T>  
-struct is_enum : integral_constant<bool, 
-    !is_integral_v<T> &&
-    !is_array_v<T> && 
-    !is_floating_point_v<T> &&
-    !is_void_v<T> &&
-    !is_function_v<T> &&
-    !is_pointer_v<T> &&
-    !is_reference_v<T>>
-    {};
+struct is_member_pointer : false_type {};
 
-template <typename T>  
-inline constexpr bool is_enum_v = is_enum<T>::value;
+template <typename T, typename U> 
+struct is_member_pointer<T U::*> : true_type {};
+
+template <typename T> 
+inline constexpr bool is_member_pointer_v = is_member_pointer<T>::value;
+
+template <typename T> 
+struct is_member_function_pointer : false_type {};
+
+template <typename T, typename U> 
+struct is_member_function_pointer<T U::*> : is_function<T> {};
+
+template< class T >
+inline constexpr bool is_member_function_pointer_v = is_member_function_pointer<T>::value;
+
+template <typename T> 
+struct is_member_object_pointer : integral_constant<bool,
+    is_member_pointer_v<T> && 
+    !is_member_function_pointer_v<T>> {};
+
+template <typename T> 
+inline constexpr bool is_member_object_pointer_v = is_member_object_pointer<T>::value;
+
+// is_enum, is_class & is_union cannot be implemented without some compiler tricks
+// to which I do not have any access
 
 #endif
